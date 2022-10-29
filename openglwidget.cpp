@@ -98,7 +98,21 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             playerTwoPosYOffset = -2.0f;
             break;
         case Qt::Key_Space:
-            ballInGame = !ballInGame ? true : ballInGame;
+            if (playerOnePoints < 10 && playerTwoPoints < 10) {
+                ballInGame = !ballInGame ? true : ballInGame;
+            }
+            break;
+        case Qt::Key_R:
+            ballInGame = false;
+            emit UpdatePlayerWin(QString(""));
+
+            playerOnePosY = 0;
+            playerOnePoints = 0;
+            emit updateScorePlayerOne(QString("%1").arg(playerOnePoints));
+
+            playerTwoPosY = 0;
+            playerTwoPoints = 0;
+            emit updateScorePlayerTwo(QString("%1").arg(playerTwoPoints));
             break;
         case Qt::Key_Escape:
             QApplication::quit();
@@ -314,11 +328,18 @@ void OpenGLWidget::animate()
 
         // map limit
         if (ballPos[0] < -1.0f || ballPos[0] > 1.0f) {
-            ballPos[0] < 0 ? playerTwoPoints++ : playerOnePoints++;
+
+            // score
+            if (ballPos[0] < 0) {
+                playerTwoPoints++;
+                emit updateScorePlayerTwo(QString("%1").arg(playerTwoPoints));
+            } else {
+                playerOnePoints++;
+                emit updateScorePlayerOne(QString("%1").arg(playerOnePoints));
+            }
+
             ballPos = {0.0f, 0.0f};
             ballInGame = false;
-
-            qDebug("P1 (%d) X (%d) P2 ", playerOnePoints, playerTwoPoints);
         }
 
         if (ballPos[1] < -1.0f || ballPos[1] > 1.0f) {
@@ -344,7 +365,8 @@ void OpenGLWidget::animate()
             }
         }
     } else {
-        // implementation max limit of points
+        if (playerOnePoints == 10) emit UpdatePlayerWin(QString("Player One Wins!"));
+        if (playerTwoPoints == 10) emit UpdatePlayerWin(QString("Player Two Wins!"));
     }
 
     update();

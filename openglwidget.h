@@ -51,7 +51,7 @@ public:
     float playerTwoPosYOffset{0};
     int playerTwoPoints{0};
 
-    bool ballInGame{true};
+    bool ballInGame{false};
     std::array<float, 2> ballPos{0.0f, 0.0f};
     std::array<float, 2> ballPosOffset{-0.5f, 1.0f};
 
@@ -61,6 +61,9 @@ public:
 private:
 
 signals:
+    void updateScorePlayerOne(QString);
+    void updateScorePlayerTwo(QString);
+    void UpdatePlayerWin(QString);
 
 protected:
 
