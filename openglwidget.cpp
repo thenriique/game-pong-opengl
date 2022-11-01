@@ -98,13 +98,18 @@ void OpenGLWidget::keyPressEvent(QKeyEvent *event)
             playerTwoPosYOffset = -2.0f;
             break;
         case Qt::Key_Space:
-            if (playerOnePoints < 10 && playerTwoPoints < 10) {
-                ballInGame = !ballInGame ? true : ballInGame;
+            if (playerOnePoints < 10 && playerTwoPoints < 10 && !ballInGame) {
+                float randX = (std::rand() % 300)/100.0f - 1.5f; // generate random x offset [-1.5, 1.5]
+                float randY = (std::rand() % 300)/100.0f - 1.5f; // generate random y offset [-1.5, 1.5]
+
+                ballPosOffset = { randX, randY };
+
+                ballInGame = true;
             }
             break;
         case Qt::Key_R:
             ballInGame = false;
-            emit UpdatePlayerWin(QString(""));
+            emit UpdatePlayerWin(QString("")); // remove wins message
 
             playerOnePosY = 0;
             playerOnePoints = 0;
@@ -342,28 +347,40 @@ void OpenGLWidget::animate()
             ballInGame = false;
         }
 
+        // ceiling and floor reflection
         if (ballPos[1] < -1.0f || ballPos[1] > 1.0f) {
+            ballPos[1] = ballPos[1] < 0 ? -1.0f : 1.0f;
             ballPosOffset[1] = -ballPosOffset[1];
         }
 
 
         // collision
-        if (ballPos[0] < -(border - 0.05f)) {
+        if (ballPos[0] < -(border - 0.05f) && ballPos[0] > -border) {
 
-            if(std::fabs(ballPos[1] - playerOnePosY) < contactLimitBall)
+            float playerOneDiff = std::fabs(ballPos[1] - playerOnePosY);
+            if( playerOneDiff < contactLimitBall)
             {
-                ballPosOffset[0] = -ballPosOffset[0];
+                int defOne = playerOneDiff < 0.5*contactLimitBall ? 1 : -1; // define the increase/decrease in ball offset
+
+                ballPos[0] = -(border - 0.05f);
+                ballPosOffset[0] = ballPosOffset[0] > -2 ? -(ballPosOffset[0] - defOne * (ballPosOffset[0] + 2) * 0.5) : -ballPosOffset[0]; // new ball offset (limited for -2)
             }
         }
 
 
+        if (ballPos[0] > (border - 0.05f) && ballPos[0] < border) {
 
-        if (ballPos[0] > (border - 0.05f)) {
-            if(std::fabs(ballPos[1] - playerTwoPosY) < contactLimitBall)
+            float playerTwoDIff = std::fabs(ballPos[1] - playerTwoPosY);
+            if( playerTwoDIff < contactLimitBall)
             {
-                ballPosOffset[0] = -ballPosOffset[0];
+                int defTwo = playerTwoDIff < 0.75 * contactLimitBall ? 1 : -1; // define the increase/decrease in ball offset
+
+                ballPos[0] = (border - 0.05f);
+                ballPosOffset[0] = ballPosOffset[0] < 2 ? -(ballPosOffset[0] + defTwo * (2 - ballPosOffset[0]) * 0.5) : -ballPosOffset[0]; // new ball offset (limited for 2)
             }
         }
+
+
     } else {
         if (playerOnePoints == 10) emit UpdatePlayerWin(QString("Player One Wins!"));
         if (playerTwoPoints == 10) emit UpdatePlayerWin(QString("Player Two Wins!"));
